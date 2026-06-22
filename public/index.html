@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vocabolario Aquiloniese</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Ricerca vocabolario">
+        <div>
+          <p class="eyebrow">Airtable audio</p>
+          <h1>Vocabolario Aquiloniese</h1>
+        </div>
+        <label class="search">
+          <span>Cerca</span>
+          <input id="searchInput" type="search" placeholder="Lemma, italiano, inglese..." autocomplete="off" />
+        </label>
+      </section>
+
+      <section class="filters" aria-label="Filtri">
+        <label>
+          Italiano
+          <input id="italianFilter" type="search" placeholder="Filtra significato..." autocomplete="off" />
+        </label>
+        <label>
+          Inglese
+          <input id="englishFilter" type="search" placeholder="Filter English..." autocomplete="off" />
+        </label>
+        <label>
+          Campi semantici
+          <select id="semanticFilter">
+            <option value="">Tutte</option>
+          </select>
+        </label>
+        <button id="clearFilters" type="button">Azzera</button>
+      </section>
+
+      <section class="status" id="status" role="status">Caricamento da Airtable...</section>
+      <section class="word-grid" id="wordGrid" aria-label="Lista parole"></section>
+      <button class="load-more" id="loadMore" type="button" hidden>Carica altri</button>
+    </main>
+
+    <section class="detail-overlay" id="detailOverlay" hidden aria-label="Dettaglio vocabolo">
+      <article class="detail-card" id="detailCard">
+        <button class="detail-close" id="detailClose" type="button" aria-label="Chiudi dettaglio">×</button>
+        <div class="detail-card__head">
+          <div>
+            <h2 id="detailWord"></h2>
+            <p class="phonetic" id="detailPhonetic"></p>
+          </div>
+          <button class="play detail-play" id="detailPlay" type="button" aria-label="Riproduci audio">
+            <span class="play__icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="definition" id="detailDefinition"></p>
+        <p class="english" id="detailEnglish"></p>
+        <div class="detail-extra" id="detailExtra"></div>
+        <div class="tags" id="detailTags"></div>
+        <audio id="detailAudio" preload="none"></audio>
+      </article>
+    </section>
+
+    <template id="wordTemplate">
+      <article class="word-card">
+        <div class="word-card__head">
+          <div>
+            <h2></h2>
+            <p class="phonetic"></p>
+          </div>
+          <button class="play" type="button" aria-label="Riproduci audio">
+            <span class="play__icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="definition"></p>
+        <p class="english"></p>
+        <div class="tags"></div>
+        <audio preload="none"></audio>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
