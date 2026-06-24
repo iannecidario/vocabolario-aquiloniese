@@ -9,15 +9,25 @@
   <body>
     <main class="app-shell">
       <section class="topbar" aria-label="Ricerca vocabolario">
-        <div>
-          <p class="eyebrow">Airtable audio</p>
+        <img
+          class="brand-logo"
+          src="/assets/meda-logo.png"
+          alt="Logo MEdA - Museo Etnografico di Aquilonia Beniamino Tartaglia"
+        />
+        <div class="title-block">
           <h1>Vocabolario Aquiloniese</h1>
+          <p class="subtitle">Beniamino Tartaglia - Dario Ianneci</p>
         </div>
         <label class="search">
           <span>Cerca</span>
           <input id="searchInput" type="search" placeholder="Lemma, italiano, inglese..." autocomplete="off" />
         </label>
       </section>
+
+      <nav class="alphabet-nav" aria-label="Filtro alfabetico per lemma">
+        <button class="alpha-button is-active" type="button" data-letter="">Tutte</button>
+        <div class="alphabet-bar" id="alphabetBar"></div>
+      </nav>
 
       <section class="filters" aria-label="Filtri">
         <label>
@@ -35,6 +45,11 @@
           </select>
         </label>
         <button id="clearFilters" type="button">Azzera</button>
+      </section>
+
+      <section class="semantic-active" id="semanticActive" hidden aria-live="polite">
+        <span>Campo semantico attivo: <strong id="semanticActiveLabel"></strong></span>
+        <button id="clearSemanticFilter" type="button">× Rimuovi filtro</button>
       </section>
 
       <section class="status" id="status" role="status">Caricamento da Airtable...</section>

@@ -7,6 +7,10 @@ const englishFilter = document.querySelector("#englishFilter");
 const semanticFilter = document.querySelector("#semanticFilter");
 const clearFilters = document.querySelector("#clearFilters");
 const loadMore = document.querySelector("#loadMore");
+const alphabetBar = document.querySelector("#alphabetBar");
+const semanticActive = document.querySelector("#semanticActive");
+const semanticActiveLabel = document.querySelector("#semanticActiveLabel");
+const clearSemanticFilter = document.querySelector("#clearSemanticFilter");
 const detailOverlay = document.querySelector("#detailOverlay");
 const detailClose = document.querySelector("#detailClose");
 const detailWord = document.querySelector("#detailWord");
@@ -22,12 +26,21 @@ let vocabulary = [];
 let currentAudio = null;
 let visibleLimit = 96;
 let renderTimer = null;
+let activeLetter = "";
 
 const initialVisibleLimit = 96;
 const visibleLimitStep = 96;
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 function clean(value) {
   return String(value || "").trim();
+}
+
+function normalizeText(value) {
+  return clean(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function setStatus(message, isError = false) {
@@ -70,6 +83,7 @@ function prepareItem(item) {
     _definitionText: clean(item.definition).toLowerCase(),
     _englishText: clean(item.english).toLowerCase(),
     _searchText: searchableText(item),
+    _lemmaInitial: normalizeText(item.word).charAt(0).toUpperCase(),
     _semanticValues: semanticValues
   };
 }
@@ -81,11 +95,12 @@ function getFilteredItems() {
   const semantic = semanticFilter.value;
 
   return vocabulary.filter((item) => {
+    const matchesLetter = !activeLetter || item._lemmaInitial === activeLetter;
     const matchesQuery = !query || item._searchText.includes(query);
     const matchesItalian = !italian || item._definitionText.includes(italian);
     const matchesEnglish = !english || item._englishText.includes(english);
     const matchesSemantic = !semantic || item._semanticValues.includes(semantic);
-    return matchesQuery && matchesItalian && matchesEnglish && matchesSemantic;
+    return matchesLetter && matchesQuery && matchesItalian && matchesEnglish && matchesSemantic;
   });
 }
 
@@ -94,6 +109,35 @@ function makeTag(text, className = "") {
   tag.className = `tag ${className}`.trim();
   tag.textContent = text;
   return tag;
+}
+
+function makeSemanticTag(text) {
+  const tag = document.createElement("button");
+  tag.className = "tag semantic";
+  tag.type = "button";
+  tag.textContent = text;
+  tag.dataset.semanticValue = text;
+  tag.classList.toggle("is-active", semanticFilter.value === text);
+  tag.setAttribute("aria-pressed", String(semanticFilter.value === text));
+  tag.title = `Filtra per ${text}`;
+  tag.addEventListener("click", (event) => {
+    event.stopPropagation();
+    applySemanticFilter(text);
+  });
+  return tag;
+}
+
+function applySemanticFilter(value) {
+  semanticFilter.value = value;
+  visibleLimit = initialVisibleLimit;
+  updateSemanticState();
+  render();
+}
+
+function updateSemanticState() {
+  const value = clean(semanticFilter.value);
+  semanticActive.hidden = !value;
+  semanticActiveLabel.textContent = value;
 }
 
 function sortByLemma(items) {
@@ -186,7 +230,7 @@ function openDetail(item) {
   }
 
   clean(item.semantic).split(",").map((value) => clean(value)).filter(Boolean).forEach((value) => {
-    detailTags.append(makeTag(value, "semantic"));
+    detailTags.append(makeSemanticTag(value));
   });
   if (clean(item.language)) detailTags.append(makeTag(item.language));
   if (clean(item.category)) detailTags.append(makeTag(item.category, "category"));
@@ -217,6 +261,23 @@ function playAudio(audio, play, source) {
   }
   audio.pause();
   return Promise.resolve();
+}
+
+function buildAlphabetBar() {
+  alphabet.forEach((letter) => {
+    const button = document.createElement("button");
+    button.className = "alpha-button";
+    button.type = "button";
+    button.dataset.letter = letter;
+    button.textContent = letter;
+    alphabetBar.append(button);
+  });
+}
+
+function updateActiveLetter() {
+  document.querySelectorAll("[data-letter]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.letter === activeLetter);
+  });
 }
 
 function scheduleRender() {
@@ -251,7 +312,7 @@ function render() {
     english.hidden = !clean(item.english);
 
     clean(item.semantic).split(",").map((value) => clean(value)).filter(Boolean).forEach((value) => {
-      tags.append(makeTag(value, "semantic"));
+      tags.append(makeSemanticTag(value));
     });
     if (clean(item.language)) tags.append(makeTag(item.language));
     if (clean(item.category)) tags.append(makeTag(item.category, "category"));
@@ -304,6 +365,7 @@ async function loadVocabulary() {
 
     vocabulary = sortByLemma((payload.items || []).map(prepareItem));
     fillSelect(semanticFilter, uniqueOptions(vocabulary, "semantic"));
+    updateSemanticState();
     render();
   } catch (error) {
     setStatus(error.message, true);
@@ -313,8 +375,18 @@ async function loadVocabulary() {
 [searchInput, italianFilter, englishFilter, semanticFilter].forEach((control) => {
   control.addEventListener("input", () => {
     visibleLimit = initialVisibleLimit;
+    if (control === semanticFilter) updateSemanticState();
     scheduleRender();
   });
+});
+
+document.querySelector(".alphabet-nav").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-letter]");
+  if (!button) return;
+  activeLetter = button.dataset.letter;
+  visibleLimit = initialVisibleLimit;
+  updateActiveLetter();
+  render();
 });
 
 clearFilters.addEventListener("click", () => {
@@ -322,8 +394,18 @@ clearFilters.addEventListener("click", () => {
   italianFilter.value = "";
   englishFilter.value = "";
   semanticFilter.value = "";
+  activeLetter = "";
   visibleLimit = initialVisibleLimit;
+  updateActiveLetter();
+  updateSemanticState();
   window.clearTimeout(renderTimer);
+  render();
+});
+
+clearSemanticFilter.addEventListener("click", () => {
+  semanticFilter.value = "";
+  visibleLimit = initialVisibleLimit;
+  updateSemanticState();
   render();
 });
 
@@ -369,4 +451,5 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !detailOverlay.hidden) closeDetail();
 });
 
+buildAlphabetBar();
 loadVocabulary();
